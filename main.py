@@ -9,7 +9,7 @@ class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode([WIDTH, HEIGHT])
-        self.bg = pygame.image.load('bg2.jpg')
+        self.bg = pygame.image.load('net.jpg')
         pygame.display.set_caption('Platformer')
         # Создаем спрайт игрока
         self.player = Player(200, 200)
@@ -40,8 +40,8 @@ class Game:
                         if coord[0] == t.rect.x and coord[1] == t.rect.y:
                             map[key].pop(map[key].index(coord))
 
-    def load_map(self):
-        with open('map.json', 'r') as f:
+    def load_map(self, filename):
+        with open(filename, 'r') as f:
             data = json.load(f)
         for key in data:
             for coords in data[key]:
@@ -51,7 +51,7 @@ class Game:
 
     def run(self):
         done = False
-        map = defaultdict(list, self.load_map())
+        map = defaultdict(list, self.load_map('avlsashenko.json'))
         while not done:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

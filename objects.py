@@ -56,19 +56,23 @@ class Player(pygame.sprite.Sprite):
     def go_left(self):
         """ Вызывается, когда пользователь нажимает стрелку влево. """
         self.change_x -= 6
+        self.change_y = 0
         self.direction = "L"
 
     def go_right(self):
         """ Вызывается, когда пользователь нажимает стрелку вправо. """
         self.change_x += 6
+        self.change_y = 0
         self.direction = "R"
 
     def go_up(self):
         self.change_y -= 6
+        self.change_x = 0
         self.direction = 'U'
 
     def go_down(self):
         self.change_y += 6
+        self.change_x = 0
         self.direction = 'D'
 
     def stop(self):
@@ -132,7 +136,6 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
 
-
 class Texture(pygame.sprite.Sprite):
     def __init__(self, x, y, img_name):
         super().__init__()
@@ -161,7 +164,6 @@ class TextureMove(Texture):
             self.image = pygame.image.load(path)
         except FileNotFoundError:
             print('Нет такого файла, поробуй еще')
-
 
     def place(self):
         return Texture(self.rect.x, self.rect.y, self.img_name)
