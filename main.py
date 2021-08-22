@@ -1,9 +1,10 @@
 import json
 from collections import defaultdict
 import pygame
-from objects import Player, TextureMove, Texture
+from objects import Player, TextureMove, Texture, Explosion
 from constants import WIDTH, HEIGHT, FPS
 import video
+
 
 class Game:
     def __init__(self):
@@ -48,7 +49,9 @@ class Game:
                 for k,v in map.items():
                     if (isinstance(v,list) and textcoords in v) or textcoords == v:
                         if k == 'cementf' or k == 'cementv' or k == 'cementh':
-                            self.bullets_lst.remove(self.bullets_lst.sprites()[0])
+                            bullet = self.bullets_lst.sprites()[0]
+                            self.sprite_list.add(Explosion(bullet.rect.x-60, bullet.rect.y-50))
+                            self.bullets_lst.remove(bullet)
                             break
                         elif k == 'tree':
                             break
@@ -56,7 +59,9 @@ class Game:
                             self.bullets_lst.draw(self.screen)
                             break
                         else:
-                            self.bullets_lst.remove(self.bullets_lst.sprites()[0])
+                            bullet = self.bullets_lst.sprites()[0]
+                            self.sprite_list.add(Explosion(bullet.rect.x-60, bullet.rect.y-50))
+                            self.bullets_lst.remove(bullet)
                             self.texture_lst.remove(hit_texture)
                             break
                         
@@ -71,7 +76,7 @@ class Game:
 
     def run(self):
         done = False
-        map = defaultdict(list, self.load_map('avlsashenko.json'))
+        map = defaultdict(list, self.load_map('ashestakov.json'))
         while not done:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

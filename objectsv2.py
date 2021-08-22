@@ -1,36 +1,6 @@
 import os
 import pygame
-from utils import SpriteSheet
 from constants import HEIGHT, WIDTH
-
-
-class Explosion(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-
-        self.ss = SpriteSheet('assets/explosion.png')
-        self.images = []
-        for i in range(4):
-            self.images.append(self.ss.get_image(i*123, 0, 123, 100))
-
-        self.image = self.images[0]
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.indx = 1
-        self.cooldown = 0
-
-    def update(self):
-        if not self.cooldown:
-            self.image = self.images[self.indx % len(self.images)]
-            self.indx += 1
-            self.cooldown = 3
-
-        if self.cooldown > 0:
-            self.cooldown -= 1
-        
-        if self.indx == 4:
-            self.kill()
 
 
 class Player(pygame.sprite.Sprite):
@@ -63,20 +33,27 @@ class Player(pygame.sprite.Sprite):
             'U': self.image_u,
         }
 
-    def update(self):
+    def update(self, map):
         self.rect.x += self.change_x
         self.rect.y += self.change_y
 
         sprite = pygame.sprite.spritecollideany(self, self.textures, None)
         if sprite:
-            if self.direction == 'U':
-                self.rect.top = sprite.rect.bottom
-            elif self.direction == 'D':
-                self.rect.bottom = sprite.rect.top
-            elif self.direction == 'R':
-                self.rect.right = sprite.rect.left
-            elif self.direction == 'L':
-                self.rect.left = sprite.rect.right
+            spritecoords = [sprite.rect[0], sprite.rect[1]]
+            for k,v in map.items():
+                if (isinstance(v,list) and spritecoords in v) or spritecoords == v:
+                    if k == 'tree':
+                        break
+                    else:
+                        if self.direction == 'U':
+                            self.rect.top = sprite.rect.bottom
+                        elif self.direction == 'D':
+                            self.rect.bottom = sprite.rect.top
+                        elif self.direction == 'R':
+                            self.rect.right = sprite.rect.left
+                        elif self.direction == 'L':
+                            self.rect.left = sprite.rect.right
+                        break
 
         self.image = self.direct_dict[self.direction]
         if self.cooldown > 0:
@@ -166,6 +143,7 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
 
+
 class Texture(pygame.sprite.Sprite):
     def __init__(self, x, y, img_name):
         super().__init__()
@@ -194,6 +172,7 @@ class TextureMove(Texture):
             self.image = pygame.image.load(path)
         except FileNotFoundError:
             print('Нет такого файла, поробуй еще')
+
 
     def place(self):
         return Texture(self.rect.x, self.rect.y, self.img_name)
