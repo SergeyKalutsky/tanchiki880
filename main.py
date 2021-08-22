@@ -3,7 +3,7 @@ from collections import defaultdict
 import pygame
 from objects import Player, TextureMove, Texture
 from constants import WIDTH, HEIGHT, FPS
-
+import video
 
 class Game:
     def __init__(self):
@@ -26,8 +26,8 @@ class Game:
     def draw(self):
         self.screen.blit(self.bg, (0, 0))
         self.sprite_list.draw(self.screen)
-        self.texture_lst.draw(self.screen)
         self.bullets_lst.draw(self.screen)
+        self.texture_lst.draw(self.screen)
 
     def delete_texture(self, map):
         for t in self.texture_lst.sprites():
@@ -40,6 +40,26 @@ class Game:
                         if coord[0] == t.rect.x and coord[1] == t.rect.y:
                             map[key].pop(map[key].index(coord))
 
+    def collision_texture(self, map):
+        if len(self.bullets_lst) !=0:
+            hit_texture = pygame.sprite.spritecollideany(self.bullets_lst.sprites()[0], self.texture_lst)
+            if hit_texture:
+                textcoords = [hit_texture.rect[0], hit_texture.rect[1]]
+                for k,v in map.items():
+                    if (isinstance(v,list) and textcoords in v) or textcoords == v:
+                        if k == 'cementf' or k == 'cementv' or k == 'cementh':
+                            self.bullets_lst.remove(self.bullets_lst.sprites()[0])
+                            break
+                        elif k == 'tree':
+                            break
+                        elif k == 'water':
+                            self.bullets_lst.draw(self.screen)
+                            break
+                        else:
+                            self.bullets_lst.remove(self.bullets_lst.sprites()[0])
+                            self.texture_lst.remove(hit_texture)
+                            break
+                        
     def load_map(self, filename):
         with open(filename, 'r') as f:
             data = json.load(f)
@@ -92,13 +112,13 @@ class Game:
             self.bullets_lst.update()
             self.sprite_list.update()
             self.texture_lst.update()
-            pygame.sprite.groupcollide(self.bullets_lst, self.texture_lst, True, True)
+            self.collision_texture(map)
             pygame.display.flip()
             self.clock.tick(FPS)
         pygame.quit()
 
-
 game = Game()
+video.run_vid()
 game.run()
 
 
