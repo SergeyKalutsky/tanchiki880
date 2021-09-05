@@ -1,10 +1,11 @@
 import json
-from collections import defaultdict
-import pygame
-from objects import Player, TextureMove, Texture, Explosion
-from constants import WIDTH, HEIGHT, FPS
 import video
-
+import pygame
+import asyncio
+import websockets
+from collections import defaultdict
+from constants import WIDTH, HEIGHT, FPS
+from objects import Player, TextureMove, Texture, Explosion
 
 class Game:
     def __init__(self):
@@ -23,6 +24,8 @@ class Game:
         self.sprite_list.add(self.texture)
         self.player.textures = self.texture_lst
         self.clock = pygame.time.Clock()
+        
+        self.map = defaultdict(list, self.load_map('ashestakov.json'))
 
     def draw(self):
         self.screen.blit(self.bg, (0, 0))
@@ -74,56 +77,66 @@ class Game:
                 self.texture_lst.add(texture)
         return data
 
-    def run(self):
+    async def run(self):
         done = False
-        map = defaultdict(list, self.load_map('ashestakov.json'))
+        uri = "ws://84.201.165.141:8765"
+        name = 'Sergey'
         while not done:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    with open('map.json', 'w') as f:
-                        json.dump(map, f)
-                    done = True
+            async with websockets.connect(uri) as websocket:
+                await websocket.send(name)
+                greeting = await websocket.recv()
+                
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        async with open('map.json', 'w') as f:
+                            json.dump(self.map, f)
+                        done = True
 
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        texture = self.texture.place()
-                        self.texture_lst.add(texture)
-                        map[self.texture.img_name].append(
-                            (self.texture.rect.x, self.texture.rect.y))
-                    if event.button == 3:
-                        self.delete_texture(map)
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:
+                            texture = self.texture.place()
+                            self.texture_lst.add(texture)
+                            self.map[self.texture.img_name].append(
+                                (self.texture.rect.x, self.texture.rect.y))
+                        if event.button == 3:
+                            self.delete_texture(self.map)
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        self.player.go_left()
-                    elif event.key == pygame.K_q:
-                        self.texture.change_img(input('Текстура: '))
-                    elif event.key == pygame.K_RIGHT:
-                        self.player.go_right()
-                    elif event.key == pygame.K_UP:
-                        self.player.go_up()
-                    elif event.key == pygame.K_DOWN:
-                        self.player.go_down()
-                    elif event.key == pygame.K_SPACE:
-                        bullet = self.player.shoot()
-                        if bullet:
-                            self.bullets_lst.add(bullet)
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_LEFT:
+                            self.player.go_left()
+                        elif event.key == pygame.K_q:
+                            self.texture.change_img(input('Текстура: '))
+                        elif event.key == pygame.K_RIGHT:
+                            self.player.go_right()
+                        elif event.key == pygame.K_UP:
+                            self.player.go_up()
+                        elif event.key == pygame.K_DOWN:
+                            self.player.go_down()
+                        elif event.key == pygame.K_SPACE:
+                            bullet = self.player.shoot()
+                            if bullet:
+                                self.bullets_lst.add(bullet)
 
-                elif event.type == pygame.KEYUP:
-                    if event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
-                        self.player.stop()
+                    elif event.type == pygame.KEYUP:
+                        if event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
+                            self.player.stop()
 
-            self.draw()
-            self.bullets_lst.update()
-            self.sprite_list.update()
-            self.texture_lst.update()
-            self.collision_texture(map)
-            pygame.display.flip()
-            self.clock.tick(FPS)
+                self.draw()
+                self.bullets_lst.update()
+                self.sprite_list.update()
+                self.texture_lst.update()
+                self.collision_texture(self.map)
+                pygame.display.flip()
+                self.clock.tick(FPS)
         pygame.quit()
 
 game = Game()
 video.run_vid()
-game.run()
+loop = asyncio.get_event_loop()
+task = loop.create_task(game.run())
 
+try:
+    loop.run_until_complete(task)
+except asyncio.CancelledError:
+    pass
 
